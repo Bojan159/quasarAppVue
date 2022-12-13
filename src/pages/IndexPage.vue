@@ -32,6 +32,7 @@
         <div>{{ state.poruka }}</div>
         <div>
           <q-btn label="Submit" type="submit" color="primary" />
+
           <q-btn
             label="Reset"
             type="reset"
@@ -60,14 +61,76 @@
           Komponente: {{ laptop.komponente }}
           <q-separator color="grey" spaced horizontal
         /></q-card-section>
+        <q-btn
+          label="Delete"
+          type="delete"
+          color="primary"
+          @click="deleteLaptope(laptop.id)"
+        />
+        <q-btn label="Edit" color="primary" @click="edit = true" />
       </q-card>
+    </div>
+    <div class="q-pa-md q-gutter-sm">
+      <q-dialog v-model="edit" id="edit" persistent>
+        <q-card style="min-width: 350px">
+          <q-card-section>
+            <div class="text-h6">Edit</div>
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <q-input
+              filled
+              type="double"
+              v-model="state.formdata.marka"
+              label="Marka"
+              lazy-rules
+              :rules="[
+                (val) => (val !== null && val !== '') || 'Unesite marku',
+              ]"
+            />
+            <q-input
+              filled
+              type="double"
+              v-model="state.formdata.model"
+              label="Model"
+              lazy-rules
+              :rules="[
+                (val) => (val !== null && val !== '') || 'Unesite model',
+              ]"
+            />
+
+            <q-input
+              filled
+              type="double"
+              v-model="state.formdata.komponente"
+              label="Komponente"
+              lazy-rules
+              :rules="[
+                (val) => (val !== null && val !== '') || 'Unesite komponente',
+              ]"
+            />
+          </q-card-section>
+
+          <q-card-actions align="right" class="text-primary">
+            <q-btn flat label="Zatvori" v-close-popup />
+            <q-btn flat label="Spremi" v-close-popup />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
   </div>
 </template>
 
 <script>
 import { reactive, onMounted } from "vue";
-import { addDoc, collection, getDocs } from "@firebase/firestore";
+import {
+  addDoc,
+  collection,
+  query,
+  onSnapshot,
+  deleteDoc,
+  doc,
+} from "@firebase/firestore";
 import { db } from "src/boot/firebase";
 
 export default {
@@ -83,6 +146,8 @@ export default {
       listaLaptopa: [],
     });
 
+    
+
     async function submitform() {
       await addDoc(collection(db, "laptop"), {
         marka: state.formdata.marka,
@@ -94,20 +159,30 @@ export default {
       state.formdata.komponente = " ";
     }
 
-    const dohvatiLaptope = async () => {
-      const querySnapshot = await getDocs(collection(db, "laptop"));
-      state.listaLaptopa = [];
-      querySnapshot.forEach((doc) => {
-        let laptop = {
-          id: doc.id,
-          marka: doc.data().marka,
-          model: doc.data().model,
-          komponente: doc.data().komponente,
-        };
+    let unsubscribe;
 
-        state.listaLaptopa.push(laptop);
+    const dohvatiLaptope = async () => {
+      const q = query(collection(db, "laptop"));
+      /* const querySnapshot = await getDocs(collection(db, "laptop")); */
+      unsubscribe = onSnapshot(q, (querySnapshot) => {
+        state.listaLaptopa = [];
+        querySnapshot.forEach((doc) => {
+          let laptop = {
+            id: doc.id,
+            marka: doc.data().marka,
+            model: doc.data().model,
+            komponente: doc.data().komponente,
+          };
+
+          state.listaLaptopa.push(laptop);
+        });
       });
     };
+
+    const deleteLaptope = async (id) => {
+      await deleteDoc(doc(db, "laptop", id));
+    };
+
     onMounted(() => {
       dohvatiLaptope();
     });
@@ -122,6 +197,8 @@ export default {
       submitform,
       onReset,
       state,
+      deleteLaptope,
+      edit:true,
     };
   },
 };
