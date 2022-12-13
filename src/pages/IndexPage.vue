@@ -113,7 +113,7 @@
 
           <q-card-actions align="right" class="text-primary">
             <q-btn flat label="Zatvori" v-close-popup />
-            <q-btn flat label="Spremi" v-close-popup />
+            <q-btn flat label="Spremi" @click="editForm" v-close-popup />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -122,7 +122,7 @@
 </template>
 
 <script>
-import { reactive, onMounted } from "vue";
+import { reactive, onMounted, ref } from "vue";
 import {
   addDoc,
   collection,
@@ -130,6 +130,7 @@ import {
   onSnapshot,
   deleteDoc,
   doc,
+  updateDoc,
 } from "@firebase/firestore";
 import { db } from "src/boot/firebase";
 
@@ -146,8 +147,6 @@ export default {
       listaLaptopa: [],
     });
 
-    
-
     async function submitform() {
       await addDoc(collection(db, "laptop"), {
         marka: state.formdata.marka,
@@ -158,6 +157,13 @@ export default {
       state.formdata.model = " ";
       state.formdata.komponente = " ";
     }
+    const editForm = async () => {
+      await updateDoc(doc(db, "laptop", props.editLaptopa.id), {
+        marka: state.formdata.marka,
+        model: state.formdata.model,
+        komponente: state.formdata.komponente,
+      });
+    };
 
     let unsubscribe;
 
@@ -198,7 +204,9 @@ export default {
       onReset,
       state,
       deleteLaptope,
-      edit:true,
+      edit: ref(false),
+      /* props, */
+      editForm,
     };
   },
 };
