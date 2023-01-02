@@ -67,11 +67,11 @@
           color="primary"
           @click="deleteLaptope(laptop.id)"
         />
-        <q-btn label="Edit" color="primary" @click="edit = true" />
+        <q-btn label="Edit" color="primary" @click="setEdit(laptop)" />
       </q-card>
     </div>
     <div class="q-pa-md q-gutter-sm">
-      <q-dialog v-model="edit" id="edit" persistent>
+      <q-dialog v-model="state.edit" id="edit" persistent>
         <q-card style="min-width: 350px">
           <q-card-section>
             <div class="text-h6">Edit</div>
@@ -81,7 +81,7 @@
             <q-input
               filled
               type="double"
-              v-model="state.formdata.marka"
+              v-model="state.editLaptopaPodaci.marka"
               label="Marka"
               lazy-rules
               :rules="[
@@ -91,7 +91,7 @@
             <q-input
               filled
               type="double"
-              v-model="state.formdata.model"
+              v-model="state.editLaptopaPodaci.model"
               label="Model"
               lazy-rules
               :rules="[
@@ -102,7 +102,7 @@
             <q-input
               filled
               type="double"
-              v-model="state.formdata.komponente"
+              v-model="state.editLaptopaPodaci.komponente"
               label="Komponente"
               lazy-rules
               :rules="[
@@ -122,7 +122,7 @@
 </template>
 
 <script>
-import { reactive, onMounted, ref } from "vue";
+import { reactive, onMounted } from "vue";
 import {
   addDoc,
   collection,
@@ -145,6 +145,8 @@ export default {
       },
       poruka: "",
       listaLaptopa: [],
+      edit: false,
+      editLaptopaPodaci: null,
     });
 
     async function submitform() {
@@ -158,10 +160,10 @@ export default {
       state.formdata.komponente = " ";
     }
     const editForm = async () => {
-      await updateDoc(doc(db, "laptop", props.editLaptopa.id), {
-        marka: state.formdata.marka,
-        model: state.formdata.model,
-        komponente: state.formdata.komponente,
+      await updateDoc(doc(db, "laptop", state.editLaptopaPodaci.id), {
+        marka: state.editLaptopaPodaci.marka,
+        model: state.editLaptopaPodaci.model,
+        komponente: state.editLaptopaPodaci.komponente,
       });
     };
 
@@ -169,7 +171,6 @@ export default {
 
     const dohvatiLaptope = async () => {
       const q = query(collection(db, "laptop"));
-      /* const querySnapshot = await getDocs(collection(db, "laptop")); */
       unsubscribe = onSnapshot(q, (querySnapshot) => {
         state.listaLaptopa = [];
         querySnapshot.forEach((doc) => {
@@ -199,14 +200,23 @@ export default {
       state.formdata.komponente = " ";
     };
 
+    const setEdit = (laptop) => {
+      state.edit = true;
+      state.editLaptopaPodaci = {
+        id: laptop.id,
+        marka: laptop.marka,
+        model: laptop.model,
+        komponente: laptop.komponente,
+      };
+    };
+
     return {
       submitform,
       onReset,
       state,
       deleteLaptope,
-      edit: ref(false),
-      /* props, */
       editForm,
+      setEdit,
     };
   },
 };
